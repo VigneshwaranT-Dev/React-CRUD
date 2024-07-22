@@ -1,53 +1,96 @@
 import { useEffect, useState } from "react"
+import { Button, EditableText, InputGroup, Toaster} from "@blueprintjs/core";
+
+const AppToaster = Toaster.create({
+    position: "top"
+})
 
 export function CRUD(){
-    const [userDetails, setUserDetails] = useState();
+    const [userDetails, setUserDetails] = useState([]);
+    const [addUser, setAddUser] = useState({});
+
     useEffect(() => {
         fetch('https://jsonplaceholder.typicode.com/users')
         .then((res) => res.json())
         .then((resJson) => setUserDetails(resJson))
     }, [])
 
+    function addUserDetails(e){
+       const event = e.target;
+       setAddUser((prev) => {
+            return ({
+                ...prev, [event.name] : event.value
+            })
+        })
+    }
+
+    function addUserToTable() {
+        if(addUser.name && addUser.email && addUser.website){
+            fetch('https://jsonplaceholder.typicode.com/users', {
+                method: 'POST',
+                body: JSON.stringify(addUser),
+                headers: {
+                    'Content-type': 'application/json; charset=UTF-8'
+                }
+            })
+            .then((response) => response.json())
+            .then((json) => {
+                setUserDetails([...userDetails, json]);
+                AppToaster.show({
+                    message: 'User Added Successfully',
+                    timeout: 3000,
+                    intent: 'success'
+                })
+                setAddUser({})
+            })
+        }
+    }
+
     return(
         <>
-            <table className="table table-bordered">
+            <table className="table table-bordered rounded-3 mt-5">
                 <thead>
                     <tr>    
                         <th> ID </th>
                         <th> Name </th>
-                        <th> UserName </th>
                         <th> Email Id </th>
-                        <th> Company </th>
                         <th> Website </th>
-                        <th> Address </th>
                         <th> Action </th>
                         </tr>
                 </thead>
                 <tbody>
                     {
-                        userDetails?.map((data, i) => {
+                        userDetails?.map((data) => {
                             return(
                                 <tr>
-                                    <td key={i} >{data.id}</td>
-                                    <td key={i} >{data.name}</td>
-                                    <td key={i} >{data.username}</td>
-                                    <td key={i} >{data.email}</td>
-                                    <td key={i} >{data.company.name}</td>
-                                    <td key={i} >{data.website}</td>
-                                    <td key={i} >
-                                        {
-                                            data.address.suite + ', ' + data.address.street + ', ' + data.address.city + ', ' + data.address.zipcode
-                                        }
+                                    <td>{data.id}</td>
+                                    <td>{data.name}</td>
+                                    <td>
+                                        <EditableText value={data.email}/>
                                     </td>
-                                    <td key={i} >
-                                        <button className="btn btn-success me-3"> Update </button>
-                                        <button className="btn btn-danger"> Delete </button>
+                                    <td>
+                                        <EditableText value={data.website}/>
+                                    </td>
+                                    <td>
+                                        <Button className="me-2" intent="success"> Update </Button>
+                                        <Button className="" intent="danger"> Delete </Button>
                                     </td>
                                 </tr>
                             )
                         })
                     }
                 </tbody>
+                <tfoot>
+                    <tr>
+                        <td></td>
+                        <td><InputGroup placeholder="Enter Name" value={addUser.name} name="name" onChange={addUserDetails}/></td>
+                        <td><InputGroup placeholder="Enter Email" value={addUser.email} name="email" onChange={addUserDetails}/></td>
+                        <td><InputGroup placeholder="Enter Website" value={addUser.website} name="website" onChange={addUserDetails}/></td>
+                        <td>
+                            <Button intent="primary" onClick={addUserToTable}>Add User</Button>
+                        </td>
+                    </tr>
+                </tfoot>
             </table>
         </>
     )
